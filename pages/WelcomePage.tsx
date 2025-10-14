@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -68,15 +67,13 @@ const WelcomePage: React.FC = () => {
       >
         <HeartIcon />
         <div className="relative z-10">
-            <h1 className="text-4xl md:text-5xl leading-loose font-bold text-slate-800 mb-4 drop-shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 drop-shadow-md mb-3">
                 بسم اللَّهِ الرحمن الرحیم
             </h1>
-            <p className="text-2xl font-bold text-slate-700 mb-6">
-                به سامانه آموزشی بیمارستان <span className="whitespace-nowrap">امام رضا (ع)</span>
-                <br />
-                خوش آمدید
+            <p className="text-2xl md:text-3xl font-semibold text-slate-700 drop-shadow-sm mb-6">
+                به سامانه آموزشی بیمارستان <span className="whitespace-nowrap">امام رضا (ع)</span> خوش آمدید
             </p>
-            <p className="text-md text-slate-600 mb-10">
+            <p className="text-base text-slate-600 mb-12">
                 سازنده: حسین نصاری
             </p>
             <button

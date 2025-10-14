@@ -5,6 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { FileType } from '../types';
 import type { FileAttachment } from '../types';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
+import AddFileModal from '../components/AddFileModal';
 
 
 const iconStyles: { [key in FileType]: { classes: string, content: React.ReactElement } } = {
@@ -24,36 +25,6 @@ const iconStyles: { [key in FileType]: { classes: string, content: React.ReactEl
         classes: 'bg-slate-100 text-slate-600',
         content: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
     },
-};
-
-const FileCard: React.FC<{ file: FileAttachment }> = ({ file }) => {
-    const { classes, content } = iconStyles[file.type] || iconStyles[FileType.UNKNOWN];
-
-    return (
-        <div className="group relative bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-md border border-slate-200 hover:shadow-xl hover:border-sky-300 hover:-translate-y-1 transition-all duration-300">
-            <div className="flex items-center gap-4">
-                <div className={`flex-shrink-0 h-14 w-14 rounded-lg flex items-center justify-center ${classes}`}>
-                    <div className="h-7 w-7">{content}</div>
-                </div>
-                <div className="flex-grow min-w-0">
-                    <p className="font-bold text-slate-800 truncate">{file.name}</p>
-                    <p className="text-sm text-slate-500 mt-1 truncate">{file.description || 'بدون توضیحات'}</p>
-                </div>
-            </div>
-            <a
-                href={file.dataUrl}
-                download={file.name}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="mt-auto w-full text-center bg-slate-100 hover:bg-sky-500 text-slate-700 hover:text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
-            >
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-                دانلود
-            </a>
-        </div>
-    );
 };
 
 const highlightText = (text: string, query: string): React.ReactNode => {
@@ -80,22 +51,67 @@ const highlightText = (text: string, query: string): React.ReactNode => {
 
 const DiseasePage: React.FC = () => {
   const { sectionId, diseaseId } = useParams<{ sectionId: string, diseaseId: string }>();
-  const { sections, isAdmin } = useAppContext();
+  const { sections, isAdmin, deleteFile } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const searchQuery = params.get('q') || '';
+  const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
 
   const section = sections.find(s => s.id === sectionId);
   const disease = section?.diseases.find(d => d.id === diseaseId);
+  
+  const handleDeleteFile = (fileId: string) => {
+    if (sectionId && diseaseId) {
+        deleteFile(sectionId, diseaseId, fileId);
+    }
+  };
+
+  const FileCard: React.FC<{ file: FileAttachment, onDelete: (fileId: string) => void }> = ({ file, onDelete }) => {
+    const { classes, content } = iconStyles[file.type] || iconStyles[FileType.UNKNOWN];
+
+    return (
+        <div className="group relative bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-md border border-slate-200 hover:shadow-xl hover:border-sky-300 hover:-translate-y-1 transition-all duration-300">
+            {isAdmin && (
+                <button 
+                    onClick={() => onDelete(file.id)}
+                    className="absolute top-2 left-2 z-20 p-1.5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label="حذف فایل"
+                >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
+                </button>
+            )}
+            <div className="flex items-center gap-4">
+                <div className={`flex-shrink-0 h-14 w-14 rounded-lg flex items-center justify-center ${classes}`}>
+                    <div className="h-7 w-7">{content}</div>
+                </div>
+                <div className="flex-grow min-w-0">
+                    <p className="font-bold text-slate-800 truncate">{file.name}</p>
+                    <p className="text-sm text-slate-500 mt-1 truncate">{file.description || 'بدون توضیحات'}</p>
+                </div>
+            </div>
+            <a
+                href={file.dataUrl}
+                download={file.name}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="mt-auto w-full text-center bg-slate-100 hover:bg-sky-500 text-slate-700 hover:text-white font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+            >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                دانلود
+            </a>
+        </div>
+    );
+  };
+
 
   const handleDownloadWord = async () => {
     if (!disease) return;
 
-    // Sanitize filename and use .docx extension
     const safeFilename = disease.name.replace(/[/\\?%*:|"<>]/g, '-') + '.docx';
 
-    // Parse description for bold text and create paragraphs for the docx file
     const descriptionParagraphs = disease.description.split('\n').map(line => {
         const parts: TextRun[] = [];
         const regex = /\*\*(.*?)\*\*/g;
@@ -215,7 +231,18 @@ const DiseasePage: React.FC = () => {
 
 
         <div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-6">فایل‌های ضمیمه</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">فایل‌های ضمیمه</h2>
+                {isAdmin && (
+                    <button 
+                        onClick={() => setIsAddFileModalOpen(true)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.414l-1.293 1.293a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L13 9.414V13h-1.5z" /><path d="M9 13h2v5a1 1 0 11-2 0v-5z" /></svg>
+                        <span>افزودن فایل</span>
+                    </button>
+                )}
+            </div>
             
             {disease.files.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -223,6 +250,7 @@ const DiseasePage: React.FC = () => {
                         <FileCard 
                             key={file.id} 
                             file={file} 
+                            onDelete={handleDeleteFile}
                         />
                     ))}
                 </div>
@@ -232,6 +260,12 @@ const DiseasePage: React.FC = () => {
                 </div>
             )}
         </div>
+        <AddFileModal 
+            isOpen={isAddFileModalOpen} 
+            onClose={() => setIsAddFileModalOpen(false)} 
+            sectionId={sectionId!} 
+            diseaseId={diseaseId!} 
+        />
     </div>
   );
 };

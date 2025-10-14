@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import NewsBanners from '../components/NewsBanners';
+import type { Section } from '../types';
+import AddSectionModal from '../components/AddSectionModal';
+import EditSectionModal from '../components/EditSectionModal';
 
 const colorStyles: { [key: string]: { bg: string; shadow: string; accent?: string; hoverBg?: string } } = {
   red: { bg: 'bg-gradient-to-br from-rose-500 to-red-600', shadow: 'shadow-2xl shadow-rose-600/30', accent: 'border-rose-500', hoverBg: 'hover:bg-rose-50' },
@@ -33,9 +36,23 @@ const cardColors = [
 
 
 const HomePage: React.FC = () => {
-  const { sections, isAdmin, banners } = useAppContext();
+  const { sections, isAdmin, banners, deleteSection } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
+
+  const handleEditSection = (e: React.MouseEvent, section: Section) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingSection(section);
+  };
+
+  const handleDeleteSection = (e: React.MouseEvent, sectionId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteSection(sectionId);
+  };
 
 
   useEffect(() => {
@@ -111,6 +128,15 @@ const HomePage: React.FC = () => {
                         </svg>
                         <span>مدیریت بنرهای خبری</span>
                     </Link>
+                    <button
+                        onClick={() => setIsAddSectionModalOpen(true)}
+                        className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                        <span>افزودن بخش جدید</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -142,18 +168,6 @@ const HomePage: React.FC = () => {
       ) : (
         sections.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 perspective-1000">
-                <Link
-                    to="/about-hospital-section"
-                    className={`group relative block overflow-hidden rounded-2xl text-right ${colorStyles.emerald.shadow} ${colorStyles.emerald.bg} transition-all duration-500 transform-style-3d hover:!shadow-none hover:scale-110 hover:-rotate-y-6 hover:rotate-x-4`}
-                >
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-br-full opacity-80 transform -translate-x-4 -translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
-                    <div className="absolute bottom-0 right-0 w-16 h-16 bg-white/10 rounded-tl-full opacity-80 transform translate-x-4 translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
-    
-                    <div className="relative z-10 p-5 flex flex-col justify-end min-h-[160px]">
-                        <h3 className="text-2xl font-bold text-white drop-shadow-md mt-auto">درباره بیمارستان</h3>
-                    </div>
-                </Link>
                 {sections.map((section) => {
                     const style = colorStyles[section.colorClass] || colorStyles.default;
                 return (
@@ -162,7 +176,16 @@ const HomePage: React.FC = () => {
                     to={`/section/${section.id}`}
                     className={`group relative block overflow-hidden rounded-2xl text-right ${style.shadow} ${style.bg} transition-all duration-500 transform-style-3d hover:!shadow-none hover:scale-110 hover:-rotate-y-6 hover:rotate-x-4`}
                     >
-                    {/* Decorative elements */}
+                    {isAdmin && (
+                        <div className="absolute top-2 left-2 z-20 flex gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button onClick={(e) => handleEditSection(e, section)} className="p-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors" aria-label="ویرایش بخش">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg>
+                            </button>
+                            <button onClick={(e) => handleDeleteSection(e, section.id)} className="p-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors" aria-label="حذف بخش">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    )}
                     <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-br-full opacity-80 transform -translate-x-4 -translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
                     <div className="absolute bottom-0 right-0 w-16 h-16 bg-white/10 rounded-tl-full opacity-80 transform translate-x-4 translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
     
@@ -179,6 +202,8 @@ const HomePage: React.FC = () => {
             </div>
         )
     )}
+    <AddSectionModal isOpen={isAddSectionModalOpen} onClose={() => setIsAddSectionModalOpen(false)} />
+    <EditSectionModal isOpen={!!editingSection} onClose={() => setEditingSection(null)} section={editingSection} />
     </div>
   );
 };
