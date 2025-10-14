@@ -1,0 +1,5 @@
+{
+  "name": "amozesh be bimar",
+  "description": "A web application for providing patient education materials, organized by medical sections and specific diseases. Administrators can manage content, while users can browse and view information.",
+  "requestFramePermissions": []
+}

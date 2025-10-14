@@ -1,0 +1,14 @@
+
+[
+  { "id": "emergency", "name": "اورژانس", "icon": "🚑", "colorClass": "red" },
+  { "id": "radiology", "name": "رادیولوژی", "icon": "☢️", "colorClass": "sky" },
+  { "id": "internal-surgery", "name": "داخلی جراحی", "icon": "🩺", "colorClass": "emerald" },
+  { "id": "pediatrics", "name": "اطفال", "icon": "👶", "colorClass": "yellow" },
+  { "id": "dialysis", "name": "دیالیز", "icon": "🩸", "colorClass": "orange" },
+  { "id": "laboratory", "name": "آزمایشگاه", "icon": "🔬", "colorClass": "cyan" },
+  { "id": "gynecology-surgery", "name": "جراحی زنان", "icon": "🚺", "colorClass": "indigo" },
+  { "id": "operating-room", "name": "اتاق عمل", "icon": "✂️", "colorClass": "green" },
+  { "id": "maternity-ward", "name": "زایشگاه", "icon": "🤰", "colorClass": "teal" },
+  { "id": "ccu", "name": "بخش مراقبت های ویژه CCU", "icon": "❤️‍🩹", "colorClass": "red" },
+  { "id": "icu", "name": "بخش مراقبت های ویژه ICU", "icon": "🏥", "colorClass": "purple" }
+]

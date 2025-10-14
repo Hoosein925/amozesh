@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سامانه آموزش به بیمار</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3",
+    "docx": "https://cdn.jsdelivr.net/npm/docx@8.5.0/+esm",
+    "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+  }
+}
+</script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    color: #1e293b; /* slate-800 */
+    overflow-x: hidden; /* Prevent horizontal scroll from animations */
+  }
+  
+  /* Dynamic Background Glows */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    width: 50vmax;
+    height: 50vmax;
+    border-radius: 50%;
+    /* Updated glow colors for the new background */
+    background: radial-gradient(circle, rgba(186, 230, 253, 0.3) 0%, rgba(186, 230, 253, 0) 70%);
+    animation: move-glow 20s infinite alternate;
+    z-index: -1;
+    top: -10vmax;
+    left: -10vmax;
+  }
+
+  body::after {
+    bottom: -25vmax;
+    right: -25vmax;
+    top: auto;
+    left: auto;
+    /* New violet glow */
+    background: radial-gradient(circle, rgba(196, 181, 253, 0.3) 0%, rgba(196, 181, 253, 0) 70%);
+    animation-delay: -10s;
+    animation-duration: 25s;
+  }
+
+  @keyframes move-glow {
+    from {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    to {
+        transform: translate(20vw, 30vh) rotate(30deg);
+    }
+  }
+
+
+  /* Custom Scrollbar for SkyBlue Theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #e0f2fe; /* sky-100 */
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #bae6fd; /* sky-200 */
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #7dd3fc; /* sky-300 */
+  }
+
+  @keyframes fade-in {
+      0% {
+          opacity: 0;
+      }
+      100% {
+          opacity: 1;
+      }
+  }
+  .animate-fade-in {
+      animation: fade-in 0.7s ease-in-out forwards;
+  }
+
+  @keyframes fade-in-up {
+      0% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+      }
+      100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+      }
+  }
+  .animate-fade-in-up {
+      animation: fade-in-up 0.3s ease-out forwards;
+  }
+  
+  /* Indigo glassmorphism background for content container */
+  .content-container-bg {
+    background-color: rgba(238, 242, 255, 0.6); /* indigo-100 with 60% opacity */
+    backdrop-filter: blur(16px) saturate(120%);
+  }
+
+  /* 3D Transform Helpers */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  /* Welcome card shine effect */
+  .welcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+        300px circle at var(--mouse-x) var(--mouse-y),
+        rgba(255, 255, 255, 0.5),
+        transparent 40%
+    );
+    opacity: 0;
+    transition: opacity 0.5s;
+    z-index: 1;
+  }
+
+  .welcome-card:hover::before {
+    opacity: 1;
+  }
+
+  /* Beating heart animation */
+  @keyframes beat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+  }
+  .animate-beat {
+      animation: beat 1.5s ease-in-out infinite;
+  }
+
+</style>
+</head>
+  <body class="bg-gradient-to-br from-sky-200 to-violet-300">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
