@@ -68,7 +68,7 @@ const WelcomePage: React.FC = () => {
         <HeartIcon />
         <div className="relative z-10">
             <h1 className="text-4xl md:text-5xl font-bold text-slate-800 drop-shadow-md mb-3">
-                بسم اللَّهِ الرحمن الرحیم
+                بسم اللَّه الرحمن الرحیم
             </h1>
             <p className="text-2xl md:text-3xl font-semibold text-slate-700 drop-shadow-sm mb-6">
                 به سامانه آموزشی بیمارستان <span className="whitespace-nowrap">امام رضا (ع)</span> خوش آمدید
