@@ -9,8 +9,6 @@ import SectionPage from './pages/SectionPage';
 import DiseasePage from './pages/DiseasePage';
 import WelcomePage from './pages/WelcomePage';
 import BannerManagementPage from './pages/BannerManagementPage';
-import AboutHospitalSectionPage from './pages/AboutHospitalSectionPage';
-import AboutHospitalTopicPage from './pages/AboutHospitalTopicPage';
 
 const MainLayout: React.FC = () => {
     const { isLoading } = useAppContext();
@@ -56,8 +54,6 @@ const AppRoutes: React.FC = () => {
             <Route path="/section/:sectionId" element={<SectionPage />} />
             <Route path="/disease/:sectionId/:diseaseId" element={<DiseasePage />} />
             <Route path="/admin/banners" element={<BannerManagementPage />} />
-            <Route path="/about-hospital-section" element={<AboutHospitalSectionPage />} />
-            <Route path="/about-hospital-topic/:topicId" element={<AboutHospitalTopicPage />} />
           </Route>
         </Routes>
     );
