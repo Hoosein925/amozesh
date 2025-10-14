@@ -1,9 +1,9 @@
+
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { FileType } from '../types';
 import type { FileAttachment } from '../types';
-import AddFileModal from '../components/AddFileModal';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
 
 
@@ -26,18 +26,11 @@ const iconStyles: { [key in FileType]: { classes: string, content: React.ReactEl
     },
 };
 
-const FileCard: React.FC<{ file: FileAttachment, onDelete: (fileId: string) => void, isAdmin: boolean }> = ({ file, onDelete, isAdmin }) => {
+const FileCard: React.FC<{ file: FileAttachment }> = ({ file }) => {
     const { classes, content } = iconStyles[file.type] || iconStyles[FileType.UNKNOWN];
 
     return (
         <div className="group relative bg-white rounded-2xl p-4 flex flex-col gap-4 shadow-md border border-slate-200 hover:shadow-xl hover:border-sky-300 hover:-translate-y-1 transition-all duration-300">
-            {isAdmin && (
-                 <button onClick={() => onDelete(file.id)} className="absolute top-3 left-3 z-10 p-2 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-500 transition-colors" aria-label="حذف فایل">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                    </svg>
-                </button>
-            )}
             <div className="flex items-center gap-4">
                 <div className={`flex-shrink-0 h-14 w-14 rounded-lg flex items-center justify-center ${classes}`}>
                     <div className="h-7 w-7">{content}</div>
@@ -87,24 +80,14 @@ const highlightText = (text: string, query: string): React.ReactNode => {
 
 const DiseasePage: React.FC = () => {
   const { sectionId, diseaseId } = useParams<{ sectionId: string, diseaseId: string }>();
-  const { sections, isAdmin, deleteFileFromDisease } = useAppContext();
+  const { sections, isAdmin } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const searchQuery = params.get('q') || '';
 
-  const [isAddFileModalOpen, setIsAddFileModalOpen] = useState(false);
-
   const section = sections.find(s => s.id === sectionId);
   const disease = section?.diseases.find(d => d.id === diseaseId);
-  
-  const handleDeleteFile = async (fileId: string) => {
-    if (window.confirm('آیا از حذف این فایل اطمینان دارید؟')) {
-        if (sectionId && diseaseId) {
-            await deleteFileFromDisease(sectionId, diseaseId, fileId);
-        }
-    }
-  }
 
   const handleDownloadWord = async () => {
     if (!disease) return;
@@ -234,28 +217,12 @@ const DiseasePage: React.FC = () => {
         <div>
             <h2 className="text-2xl font-bold text-slate-800 mb-6">فایل‌های ضمیمه</h2>
             
-            {isAdmin && (
-                <div className="mb-8">
-                    <button
-                        onClick={() => setIsAddFileModalOpen(true)}
-                        className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        افزودن فایل جدید
-                    </button>
-                </div>
-            )}
-            
             {disease.files.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {disease.files.map(file => (
                         <FileCard 
                             key={file.id} 
                             file={file} 
-                            onDelete={handleDeleteFile} 
-                            isAdmin={isAdmin} 
                         />
                     ))}
                 </div>
@@ -265,14 +232,6 @@ const DiseasePage: React.FC = () => {
                 </div>
             )}
         </div>
-        {sectionId && diseaseId && (
-            <AddFileModal
-                isOpen={isAddFileModalOpen}
-                onClose={() => setIsAddFileModalOpen(false)}
-                sectionId={sectionId}
-                diseaseId={diseaseId}
-            />
-        )}
     </div>
   );
 };

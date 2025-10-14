@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -67,8 +68,8 @@ const WelcomePage: React.FC = () => {
       >
         <HeartIcon />
         <div className="relative z-10">
-            <h1 className="text-4xl md:text-5xl leading-loose font-bold bg-clip-text text-transparent bg-gradient-to-br from-slate-900 to-slate-600 mb-4 drop-shadow-sm whitespace-nowrap">
-                بسم اللَّه الرحمن الرحیم
+            <h1 className="text-4xl md:text-5xl leading-loose font-bold text-slate-800 mb-4 drop-shadow-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
+                بسم اللَّهِ الرحمن الرحیم
             </h1>
             <p className="text-2xl font-bold text-slate-700 mb-6">
                 به سامانه آموزشی بیمارستان <span className="whitespace-nowrap">امام رضا (ع)</span>

@@ -2,9 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import EditSectionModal from '../components/EditSectionModal';
 import NewsBanners from '../components/NewsBanners';
-import type { Section } from '../types';
 
 const colorStyles: { [key: string]: { bg: string; shadow: string; accent?: string; hoverBg?: string } } = {
   red: { bg: 'bg-gradient-to-br from-rose-500 to-red-600', shadow: 'shadow-2xl shadow-rose-600/30', accent: 'border-rose-500', hoverBg: 'hover:bg-rose-50' },
@@ -21,13 +19,6 @@ const colorStyles: { [key: string]: { bg: string; shadow: string; accent?: strin
   default: { bg: 'bg-gradient-to-br from-slate-500 to-slate-600', shadow: 'shadow-2xl shadow-slate-600/30' },
 };
 
-const colorOptions = [
-    { name: 'قرمز', class: 'red' }, { name: 'نارنجی', class: 'orange' }, { name: 'زرد', class: 'yellow' },
-    { name: 'سبز', class: 'green' }, { name: 'زمردی', class: 'emerald' }, { name: 'تیل', class: 'teal' },
-    { name: 'فیروزه‌ای', class: 'cyan' }, { name: 'آبی آسمانی', class: 'sky' }, { name: 'نیلی', class: 'indigo' },
-    { name: 'بنفش', class: 'purple' }, { name: 'صورتی', class: 'pink' },
-];
-
 interface SearchResult {
   sectionId: string;
   sectionName: string;
@@ -42,12 +33,8 @@ const cardColors = [
 
 
 const HomePage: React.FC = () => {
-  const { sections, isAdmin, addSection, deleteSection, banners } = useAppContext();
-  const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionIcon, setNewSectionIcon] = useState('📁');
-  const [newSectionColor, setNewSectionColor] = useState('sky');
+  const { sections, isAdmin, banners } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
 
@@ -88,31 +75,6 @@ const HomePage: React.FC = () => {
     setSearchResults(allResults);
   }, [searchQuery, sections]);
 
-
-  const handleAddSection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newSectionName.trim()) {
-      await addSection(newSectionName.trim(), newSectionIcon, newSectionColor);
-      setNewSectionName('');
-      setNewSectionIcon('📁');
-      setNewSectionColor('sky');
-    }
-  };
-  
-  const handleDeleteSection = async (e: React.MouseEvent, sectionId: string) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (window.confirm('آیا از حذف این بخش اطمینان دارید؟ تمام بیماری‌های آن نیز حذف خواهند شد.')) {
-        await deleteSection(sectionId);
-    }
-  };
-
-  const handleEditSection = (e: React.MouseEvent, section: Section) => {
-      e.stopPropagation();
-      e.preventDefault();
-      setEditingSection(section);
-  };
-
   return (
     <div>
       <NewsBanners banners={banners} />
@@ -150,52 +112,6 @@ const HomePage: React.FC = () => {
                         <span>مدیریت بنرهای خبری</span>
                     </Link>
                 </div>
-            </div>
-            <div className="bg-white/50 p-6 rounded-2xl shadow-lg border border-slate-200">
-                <h2 className="text-xl font-semibold mb-4 text-sky-700">اضافه کردن بخش جدید</h2>
-                <form onSubmit={handleAddSection} className="space-y-4">
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <input
-                            type="text"
-                            value={newSectionName}
-                            onChange={(e) => setNewSectionName(e.target.value)}
-                            placeholder="نام بخش جدید"
-                            className="flex-grow w-full bg-white/80 border border-slate-300 rounded-lg p-3 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
-                            required
-                        />
-                        <input
-                            type="text"
-                            value={newSectionIcon}
-                            onChange={(e) => setNewSectionIcon(e.target.value)}
-                            placeholder="آیکون (اموجی)"
-                            className="w-full sm:w-24 bg-white/80 border border-slate-300 rounded-lg p-3 text-center text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-2 text-right">رنگ کاشی</label>
-                        <div className="flex flex-wrap gap-2 justify-end p-2 bg-white/50 rounded-lg">
-                            {colorOptions.map((color) => (
-                                <button
-                                key={color.class}
-                                type="button"
-                                onClick={() => setNewSectionColor(color.class)}
-                                className={`w-8 h-8 rounded-full transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${colorStyles[color.class].bg}`}
-                                title={color.name}
-                                >
-                                {newSectionColor === color.class && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white mx-auto" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                )}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <button type="submit" className="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-sky-500/30">
-                        افزودن
-                    </button>
-                </form>
             </div>
         </div>
       )}
@@ -246,21 +162,6 @@ const HomePage: React.FC = () => {
                     to={`/section/${section.id}`}
                     className={`group relative block overflow-hidden rounded-2xl text-right ${style.shadow} ${style.bg} transition-all duration-500 transform-style-3d hover:!shadow-none hover:scale-110 hover:-rotate-y-6 hover:rotate-x-4`}
                     >
-                    {isAdmin && (
-                        <div className="absolute top-2 right-2 z-20 flex gap-2">
-                            <button onClick={(e) => handleEditSection(e, section)} className="p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors" aria-label="ویرایش بخش">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                                    <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                            <button onClick={(e) => handleDeleteSection(e, section.id)} className="p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors" aria-label="حذف بخش">
-                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    )}
                     {/* Decorative elements */}
                     <div className="absolute top-0 left-0 w-24 h-24 bg-white/10 rounded-br-full opacity-80 transform -translate-x-4 -translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
                     <div className="absolute bottom-0 right-0 w-16 h-16 bg-white/10 rounded-tl-full opacity-80 transform translate-x-4 translate-y-4 transition-transform duration-500 group-hover:scale-[2.5]"></div>
@@ -278,11 +179,6 @@ const HomePage: React.FC = () => {
             </div>
         )
     )}
-    <EditSectionModal
-        isOpen={!!editingSection}
-        onClose={() => setEditingSection(null)}
-        section={editingSection}
-    />
     </div>
   );
 };

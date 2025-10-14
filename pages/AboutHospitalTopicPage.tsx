@@ -1,10 +1,11 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { aboutHospitalTopics } from './AboutHospitalSectionPage'; // Import the data
+import { useAppContext } from '../context/AppContext';
 
 const AboutHospitalTopicPage: React.FC = () => {
     const { topicId } = useParams<{ topicId: string }>();
     const navigate = useNavigate();
+    const { aboutHospitalTopics } = useAppContext();
 
     const topic = aboutHospitalTopics.find(t => t.id === topicId);
 
