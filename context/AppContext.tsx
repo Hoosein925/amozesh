@@ -10,18 +10,18 @@ interface AppContextType {
   login: (user: string, pass: string) => boolean;
   logout: () => void;
   sections: Section[];
-  addSection: (name: string, icon: string, colorClass: string) => Promise<void>;
-  updateSection: (sectionId: string, newName: string, newIcon: string, newColorClass: string) => Promise<void>;
-  deleteSection: (sectionId: string) => Promise<void>;
-  addDisease: (sectionId: string, name: string, description: string) => Promise<void>;
-  updateDisease: (sectionId: string, diseaseId: string, newName: string, newDescription: string) => Promise<void>;
-  deleteDisease: (sectionId: string, diseaseId: string) => Promise<void>;
-  addFileToDisease: (sectionId: string, diseaseId: string, file: File, name: string, description: string) => Promise<void>;
-  deleteFileFromDisease: (sectionId: string, diseaseId: string, fileId: string) => Promise<void>;
   banners: Banner[];
   addBanner: (file: File, title: string, description: string) => Promise<void>;
   updateBanner: (bannerId: string, title: string, description: string, imageFile: File | null) => Promise<void>;
   deleteBanner: (bannerId: string) => Promise<void>;
+  aboutHospitalTopics: Disease[];
+  addAboutHospitalTopic: (name: string, description: string) => Promise<void>;
+  updateAboutHospitalTopic: (topicId: string, newName: string, newDescription: string) => Promise<void>;
+  deleteAboutHospitalTopic: (topicId: string) => Promise<void>;
+  // FIX: Add missing function signatures to context type to resolve type errors in consuming components.
+  updateSection: (sectionId: string, newName: string, newIcon: string, newColorClass: string) => Promise<void>;
+  updateDisease: (sectionId: string, diseaseId: string, newName: string, newDescription: string) => Promise<void>;
+  addFileToDisease: (sectionId: string, diseaseId: string, file: File, name: string, description: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -37,11 +37,12 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [sections, setSections] = useState<Section[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [aboutHospitalTopics, setAboutHospitalTopics] = useState<Disease[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      // Fetch banners
+      // Fetch banners from Supabase
       const { data: bannersData, error: bannersError } = await supabase
           .from('banners')
           .select('*')
@@ -55,32 +56,78 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
       }));
       setBanners(bannersWithUrls);
 
-      // Fetch sections with nested diseases and files
-      const { data: sectionsData, error: sectionsError } = await supabase
-          .from('sections')
-          .select('*, diseases(*, files(*))')
+      // Fetch about hospital topics from Supabase
+      const { data: topicsData, error: topicsError } = await supabase
+          .from('about_hospital_topics')
+          .select('*')
           .order('created_at', { ascending: true });
 
-      if (sectionsError) throw sectionsError;
-      
-      const sectionsWithUrls = sectionsData.map(section => ({
-          ...section,
-          id: section.id.toString(),
-          diseases: section.diseases.map((disease: any) => ({
-              ...disease,
-              id: disease.id.toString(),
-              files: disease.files.map((file: any) => ({
-                  ...file,
-                  id: file.id.toString(),
-                  dataUrl: supabase.storage.from('files').getPublicUrl(file.file_path).data.publicUrl
-              }))
-          }))
-      }));
+      if (topicsError) throw topicsError;
 
-      setSections(sectionsWithUrls as unknown as Section[]);
+      const formattedTopics = topicsData.map(topic => ({
+          ...topic,
+          id: topic.id.toString(),
+          files: [] // Ensure it matches the Disease type
+      }));
+      setAboutHospitalTopics(formattedTopics as unknown as Disease[]);
+
+       // Fetch sections from local files
+      const sectionsRes = await fetch('/data/sections.json');
+      if (!sectionsRes.ok) throw new Error('Failed to fetch sections.json');
+      const sectionsData: Omit<Section, 'diseases'>[] = await sectionsRes.json();
+
+      const populatedSections = await Promise.all(
+        sectionsData.map(async (section) => {
+          try {
+            const diseasesRes = await fetch(`/data/${section.id}/diseases.json`);
+            if (!diseasesRes.ok) return { ...section, diseases: [] }; // Section with no diseases
+            const diseaseIds: string[] = await diseasesRes.json();
+            
+            const diseases = await Promise.all(
+              diseaseIds.map(async (diseaseId) => {
+                try {
+                  const manifestRes = await fetch(`/data/${section.id}/${diseaseId}/manifest.json`);
+                  if (!manifestRes.ok) throw new Error(`Manifest for ${diseaseId} not found`);
+                  const manifest = await manifestRes.json();
+
+                  const descriptionRes = await fetch(`/data/${section.id}/${diseaseId}/description.txt`);
+                  if (!descriptionRes.ok) throw new Error(`Description for ${diseaseId} not found`);
+                  const description = await descriptionRes.text();
+
+                  const files = manifest.files.map((file: any) => ({
+                    id: file.path, // Use path as a unique ID
+                    name: file.name,
+                    description: file.description,
+                    type: file.type as FileType,
+                    dataUrl: `/data/${section.id}/${diseaseId}/${file.path}`,
+                  }));
+
+                  return {
+                    id: diseaseId,
+                    name: manifest.name,
+                    description,
+                    files,
+                  };
+                } catch (error) {
+                  console.error(`Error loading disease ${diseaseId} in section ${section.id}:`, error);
+                  return null; // Skip this disease if files are missing
+                }
+              })
+            );
+
+            return { ...section, diseases: diseases.filter((d): d is Disease => d !== null) };
+          } catch(error) {
+            console.error(`Error loading diseases for section ${section.id}:`, error);
+            return { ...section, diseases: [] };
+          }
+        })
+      );
+
+      setSections(populatedSections);
+
 
     } catch (error) {
-      console.error("Failed to load app data from Supabase:", error);
+      console.error("Failed to load app data:", error);
     }
   };
 
@@ -99,84 +146,6 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
 
   const logout = () => {
     setIsAdmin(false);
-  };
-
-  const addSection = async (name: string, icon: string, colorClass: string) => {
-    const { error } = await supabase.from('sections').insert([{ name, icon, colorClass }]);
-    if (error) console.error('Error adding section:', error);
-    else await loadData();
-  };
-
-  const updateSection = async (sectionId: string, newName: string, newIcon: string, newColorClass: string) => {
-    const { error } = await supabase.from('sections').update({ name: newName, icon: newIcon, colorClass: newColorClass }).eq('id', sectionId);
-    if (error) console.error('Error updating section:', error);
-    else await loadData();
-  };
-
-  const deleteSection = async (sectionId: string) => {
-    const { error } = await supabase.from('sections').delete().eq('id', sectionId);
-    if (error) console.error('Error deleting section:', error);
-    else await loadData();
-  };
-
-  const addDisease = async (sectionId: string, name: string, description: string) => {
-    const { error } = await supabase.from('diseases').insert([{ name, description, section_id: sectionId }]);
-    if (error) console.error('Error adding disease:', error);
-    else await loadData();
-  };
-  
-  const updateDisease = async (sectionId: string, diseaseId: string, newName: string, newDescription: string) => {
-    const { error } = await supabase.from('diseases').update({ name: newName, description: newDescription }).eq('id', diseaseId);
-    if (error) console.error('Error updating disease:', error);
-    else await loadData();
-  };
-
-  const deleteDisease = async (sectionId: string, diseaseId: string) => {
-    const { error } = await supabase.from('diseases').delete().eq('id', diseaseId);
-    if (error) console.error('Error deleting disease:', error);
-    else await loadData();
-  };
-
-  const getFileType = (mimeType: string): FileType => {
-      if (mimeType.startsWith('image/')) return FileType.IMAGE;
-      if (mimeType === 'application/pdf') return FileType.PDF;
-      if (mimeType.startsWith('audio/')) return FileType.AUDIO;
-      return FileType.UNKNOWN;
-  }
-
-  const addFileToDisease = async (sectionId: string, diseaseId: string, file: File, name: string, description: string) => {
-      const filePath = `${sectionId}/${diseaseId}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('files').upload(filePath, file);
-
-      if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          return;
-      }
-
-      const fileType = getFileType(file.type);
-      const { error: insertError } = await supabase.from('files').insert([
-          { name, description, type: fileType, disease_id: diseaseId, file_path: filePath }
-      ]);
-
-      if (insertError) console.error('Error inserting file metadata:', insertError);
-      else await loadData();
-  };
-
-  const deleteFileFromDisease = async (sectionId: string, diseaseId: string, fileId: string) => {
-      const { data: fileData, error: fetchError } = await supabase.from('files').select('file_path').eq('id', fileId).single();
-      if (fetchError || !fileData) {
-          console.error('Error fetching file path:', fetchError);
-          return;
-      }
-      const { error: deleteDbError } = await supabase.from('files').delete().eq('id', fileId);
-      if (deleteDbError) {
-          console.error('Error deleting file from DB:', deleteDbError);
-          return;
-      }
-      const { error: deleteStorageError } = await supabase.storage.from('files').remove([fileData.file_path]);
-      if (deleteStorageError) console.error('Error deleting file from storage:', deleteStorageError);
-      
-      await loadData();
   };
 
   const addBanner = async (file: File, title: string, description: string) => {
@@ -227,6 +196,84 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
       await loadData();
   };
 
+  const addAboutHospitalTopic = async (name: string, description: string) => {
+    const { error } = await supabase.from('about_hospital_topics').insert([{ name, description }]);
+    if (error) console.error('Error adding about hospital topic:', error);
+    else await loadData();
+  };
+  
+  const updateAboutHospitalTopic = async (topicId: string, newName: string, newDescription: string) => {
+    const { error } = await supabase.from('about_hospital_topics').update({ name: newName, description: newDescription }).eq('id', topicId);
+    if (error) console.error('Error updating about hospital topic:', error);
+    else await loadData();
+  };
+
+  const deleteAboutHospitalTopic = async (topicId: string) => {
+    const { error } = await supabase.from('about_hospital_topics').delete().eq('id', topicId);
+    if (error) console.error('Error deleting about hospital topic:', error);
+    else await loadData();
+  };
+
+  // FIX: Implement missing context functions for in-memory state updates.
+  // Note: These changes are not persisted and will be lost on page reload.
+  const updateSection = async (sectionId: string, newName: string, newIcon: string, newColorClass: string) => {
+    setSections(prevSections =>
+      prevSections.map(section =>
+        section.id === sectionId
+          ? { ...section, name: newName, icon: newIcon, colorClass: newColorClass }
+          : section
+      )
+    );
+  };
+  
+  const updateDisease = async (sectionId: string, diseaseId: string, newName: string, newDescription: string) => {
+    setSections(prevSections =>
+      prevSections.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              diseases: section.diseases.map(disease =>
+                disease.id === diseaseId
+                  ? { ...disease, name: newName, description: newDescription }
+                  : disease
+              )
+            }
+          : section
+      )
+    );
+  };
+
+  const addFileToDisease = async (sectionId: string, diseaseId: string, file: File, name: string, description: string) => {
+    const getFileType = (inputFile: File): FileType => {
+        if (inputFile.type.startsWith('image/')) return FileType.IMAGE;
+        if (inputFile.type === 'application/pdf') return FileType.PDF;
+        if (inputFile.type.startsWith('audio/')) return FileType.AUDIO;
+        return FileType.UNKNOWN;
+    };
+
+    const newFile: FileAttachment = {
+        id: `${Date.now()}-${file.name}`,
+        name,
+        description,
+        type: getFileType(file),
+        dataUrl: URL.createObjectURL(file),
+    };
+
+    setSections(prevSections =>
+        prevSections.map(section =>
+            section.id === sectionId
+                ? {
+                    ...section,
+                    diseases: section.diseases.map(disease =>
+                        disease.id === diseaseId
+                            ? { ...disease, files: [...disease.files, newFile] }
+                            : disease
+                    )
+                }
+                : section
+        )
+    );
+  };
 
   return (
     <AppContext.Provider value={{ 
@@ -235,18 +282,18 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         login, 
         logout, 
         sections, 
-        addSection,
-        updateSection,
-        deleteSection,
-        addDisease,
-        updateDisease,
-        deleteDisease, 
-        addFileToDisease,
-        deleteFileFromDisease,
         banners,
         addBanner,
         updateBanner,
         deleteBanner,
+        aboutHospitalTopics,
+        addAboutHospitalTopic,
+        updateAboutHospitalTopic,
+        deleteAboutHospitalTopic,
+        // FIX: Provide the new functions through the context.
+        updateSection,
+        updateDisease,
+        addFileToDisease,
     }}>
       {isLoading ? <LoadingSpinner /> : children}
     </AppContext.Provider>
